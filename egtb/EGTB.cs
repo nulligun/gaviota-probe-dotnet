@@ -2253,7 +2253,6 @@ namespace Gaviota
             ulong blocks;
             ulong n_idx;
             ulong idx = 0;
-            int[] p = new int[MAX_AAAINDEX];
 
             /* Get Reserved bytes, blocksize, offset */
             currentStream.Seek(0, SeekOrigin.Begin);
@@ -2271,12 +2270,16 @@ namespace Gaviota
 
             blocks = (offset - 40) / 4 - 1;
             n_idx = blocks + 1;
+            int[] p = new int[n_idx];
 
+            bool ok = true;
             /* Input of Indexes */
-            for (i = 0; i < n_idx; i++)
+            i = 0;
+            while (ok && (i < n_idx))
             {
-                fread32(ref idx);
+                ok = fread32(ref idx);
                 p[i] = (int)idx; /* reads a 32 bit int, and converts it to index_t */
+                i++;
             }
 
             if (!Zipinfo.ContainsKey(currentFilename))
