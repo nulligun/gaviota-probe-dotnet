@@ -2661,12 +2661,15 @@ namespace Gaviota
                                 // changing currentFile to kpk for ex. we lost a piece so new file is regq
                                 // make sure to change back when done
                                 int noep = NOSQUARE;
-                                if (!SetupEGTB(whitePieceSquares, whitePieceTypes, blackPieceSquares, blackPieceTypes, ref side, ref noep))
+                                int otherSide = Opp(side);
+                                if (!SetupEGTB(whitePieceSquares, whitePieceTypes, blackPieceSquares, blackPieceTypes, ref otherSide, ref noep))
                                 {
                                     okcall = false;
                                 }
                                 else
                                 {
+                                    list_sq_flipNS(whitePieceSquares);
+                                    list_sq_flipNS(blackPieceSquares);
                                     okcall = tb_probe_(Opp(side), NOSQUARE, ref newdtm);
                                 }
 
@@ -2674,6 +2677,8 @@ namespace Gaviota
                                 whitePieceTypes = old_whitePieceType;
                                 blackPieceSquares = old_blackPieceSquares;
                                 blackPieceTypes = old_blackPieceType;
+
+                                SetupEGTB(whitePieceSquares, whitePieceTypes, blackPieceSquares, blackPieceTypes, ref side, ref epsq);
 
                                 if (okcall)
                                 {
