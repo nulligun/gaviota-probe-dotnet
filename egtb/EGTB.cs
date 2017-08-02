@@ -332,7 +332,7 @@ namespace Gaviota
             //{143,"kppkp", MAX_kppkp, 24*MAX_PP48_INDEX, kppkp_indextopc, kppkp_pctoindex, NULL ,  NULL   ,NULL ,0, 0 },
             { "kpppk", new endgamekey(MAX_kpppk, MAX_PPP48_INDEX, kpppk_pctoindex)},
         };
-        
+
         static SevenZip.Compression.LZMA.Decoder decoder = new SevenZip.Compression.LZMA.Decoder();
         static int[][] flipt = new int[64][];
 
@@ -1957,7 +1957,7 @@ namespace Gaviota
 
             List<int> tempSquares = new List<int>();
             List<int> tempTypes = new List<int>();
-            
+
             tempSquares = new List<int>(whitePieceSquares.ToArray());
             tempTypes = new List<int>(whitePieceTypes.ToArray());
 
@@ -2044,13 +2044,13 @@ namespace Gaviota
             int mat;
 
             if (x == iDRAW || x == iFORBID)
-                    return x;
+                return x;
 
             mat = (int)x & 3;
             if (mat == iWMATE)
-                    mat = iBMATE;
+                mat = iBMATE;
             else
-                    mat = iWMATE;
+                mat = iWMATE;
 
             x = (int)(((int)x & ~3) | mat);
 
@@ -2078,7 +2078,7 @@ namespace Gaviota
             }
 
             int side = realside;
-            
+
             if (!SetupEGTB(whiteSquares, whiteTypes, blackSquares, blackTypes, ref side, ref epsq))
             {
                 probeResult.found = false;
@@ -2107,11 +2107,9 @@ namespace Gaviota
                 int ret = 0;
 
                 if (res == iWMATE)
-                    
-                        probeResult.stm = MateResult.WhiteToMate;
+                    probeResult.stm = MateResult.WhiteToMate;
                 else if (res == iBMATE)
-                   
-                        probeResult.stm = MateResult.BlackToMate;
+                    probeResult.stm = MateResult.BlackToMate;
                 else if (res == iDRAW)
                     probeResult.stm = MateResult.Draw;
 
@@ -2553,7 +2551,7 @@ namespace Gaviota
                 z = z - (LZMA86_HEADER_SIZE + 1);
                 Array.Copy(Buffer_zipped, LZMA86_HEADER_SIZE + 1, Buffer_zipped, 0, z);
 
-                    decoder.Code(zipStream, packStream, (long)z, (long)n, null);
+                decoder.Code(zipStream, packStream, (long)z, (long)n, null);
 
                 egtb_block_unpack(side, n, Buffer_packed, ref t.pcache);
 
@@ -2706,7 +2704,7 @@ namespace Gaviota
                                 blackPieceTypes = new List<int>(old_blackPieceType);
 
                                 if (Reversed)
-                                 UndoReversal(ref side, ref epsq);
+                                    UndoReversal(ref side, ref epsq);
 
                                 SetupEGTB(whitePieceSquares, whitePieceTypes, blackPieceSquares, blackPieceTypes, ref side, ref epsq);
 
