@@ -1947,8 +1947,32 @@ namespace Gaviota
                 }
             }
         }
+
         static string newFile;
-        static bool SetupEGTB(List<int> whiteSquares, List<int> whiteTypes, List<int> blackSquares, List<int> blackTypes, ref int side, ref int epsq)
+
+        static void UndoReversal(ref int side, ref int epsq)
+        {
+            list_sq_flipNS(whitePieceSquares);
+            list_sq_flipNS(blackPieceSquares);
+
+            List<int> tempSquares = new List<int>();
+            List<int> tempTypes = new List<int>();
+            
+            tempSquares = new List<int>(whitePieceSquares.ToArray());
+            tempTypes = new List<int>(whitePieceTypes.ToArray());
+
+            whitePieceSquares = new List<int>(blackPieceSquares.ToArray());
+            whitePieceTypes = new List<int>(blackPieceTypes.ToArray());
+
+            blackPieceSquares = new List<int>(tempSquares.ToArray());
+            blackPieceTypes = new List<int>(tempTypes.ToArray());
+            side = Opp(side);
+            if (epsq != NOSQUARE)
+                epsq ^= 56;
+
+        }
+
+        static bool SetupEGTB(List<int> whiteSquares, List<int> whiteTypes, List<int> blackSquares, List<int> blackTypes, ref int side, ref int epsq, bool alreadyReversed = false)
         {
             sortlists(whiteSquares, whiteTypes);
             sortlists(blackSquares, blackTypes);
@@ -1980,7 +2004,8 @@ namespace Gaviota
                 blackPieceSquares = blackSquares;
                 blackPieceTypes = blackTypes;
                 newFile = whiteLetters + blackLetters;
-                Reversed = false;
+                if (!alreadyReversed)
+                    Reversed = false;
             }
             else if (validTables.Contains(blackLetters + whiteLetters))
             {
@@ -1988,15 +2013,20 @@ namespace Gaviota
                 whitePieceTypes = blackTypes;
                 blackPieceSquares = whiteSquares;
                 blackPieceTypes = whiteTypes;
+
                 newFile = blackLetters + whiteLetters;
-                Reversed = true;
 
-                list_sq_flipNS(whitePieceSquares);
-                list_sq_flipNS(blackPieceSquares);
+                if (!alreadyReversed)
+                {
+                    Reversed = true;
 
-                side = Opp(side);
-                if (epsq != NOSQUARE)
-                    epsq ^= 56;
+                    list_sq_flipNS(whitePieceSquares);
+                    list_sq_flipNS(blackPieceSquares);
+
+                    side = Opp(side);
+                    if (epsq != NOSQUARE)
+                        epsq ^= 56;
+                }
             }
             else
             {
@@ -2008,6 +2038,25 @@ namespace Gaviota
 
             return true;
         }
+
+        public static int inv_dtm(int x)
+        {
+            int mat;
+
+            if (x == iDRAW || x == iFORBID)
+                    return x;
+
+            mat = (int)x & 3;
+            if (mat == iWMATE)
+                    mat = iBMATE;
+            else
+                    mat = iWMATE;
+
+            x = (int)(((int)x & ~3) | mat);
+
+            return x;
+        }
+
 
         public static ProbeResultType Probe(List<int> whiteSquares, List<int> blackSquares, List<int> whiteTypes, List<int> blackTypes, int realside, int epsq)
         {
@@ -2029,7 +2078,7 @@ namespace Gaviota
             }
 
             int side = realside;
-
+            
             if (!SetupEGTB(whiteSquares, whiteTypes, blackSquares, blackTypes, ref side, ref epsq))
             {
                 probeResult.found = false;
@@ -2045,19 +2094,23 @@ namespace Gaviota
                 probeResult.stm = MateResult.Unknown;
                 int res = 0;
                 int ply = 0;
-                unpackdist(dtm, ref res, ref ply);
+
+                if (!Reversed)
+                {
+                    unpackdist(dtm, ref res, ref ply);
+                }
+                else
+                {
+                    unpackdist(inv_dtm(dtm), ref res, ref ply);
+                }
 
                 int ret = 0;
 
                 if (res == iWMATE)
-                    if (Reversed)
-                        probeResult.stm = MateResult.BlackToMate;
-                    else
+                    
                         probeResult.stm = MateResult.WhiteToMate;
                 else if (res == iBMATE)
-                    if (Reversed)
-                        probeResult.stm = MateResult.WhiteToMate;
-                    else
+                   
                         probeResult.stm = MateResult.BlackToMate;
                 else if (res == iDRAW)
                     probeResult.stm = MateResult.Draw;
@@ -2601,28 +2654,11 @@ namespace Gaviota
                     List<int> old_blackPieceSquares = new List<int>(blackPieceSquares);
                     List<int> old_whitePieceType = new List<int>(whitePieceTypes);
                     List<int> old_blackPieceType = new List<int>(blackPieceTypes);
-                    string oldFileName = currentFilename;
-                    bool oldReversed = Reversed;
 
-                    List<int> xs;
-                    List<int> xp;
-                    List<int> ys;
-                    List<int> yp;
-
-                    if (side == 0)
-                    {
-                        xs = new List<int>(whitePieceSquares);
-                        xp = new List<int>(whitePieceTypes);
-                        ys = new List<int>(blackPieceSquares);
-                        yp = new List<int>(blackPieceTypes);
-                    }
-                    else
-                    {
-                        xs = new List<int>(blackPieceSquares);
-                        xp = new List<int>(blackPieceTypes);
-                        ys = new List<int>(whitePieceSquares);
-                        yp = new List<int>(whitePieceTypes);
-                    }
+                    List<int> xs = new List<int>(whitePieceSquares);
+                    List<int> xp = new List<int>(whitePieceTypes);
+                    List<int> ys = new List<int>(blackPieceSquares);
+                    List<int> yp = new List<int>(blackPieceTypes);
 
                     /* captured pawn, trick: from epsquare to captured */
                     xed = epsq ^ (1 << 3);
@@ -2652,31 +2688,25 @@ namespace Gaviota
                                 removepiece(ref ys, ref yp, j);
 
                                 int newdtm = 0;
-
-                                whitePieceSquares = ys;
-                                whitePieceTypes = yp;
-                                blackPieceSquares = xs;
-                                blackPieceTypes = xp;
-
-                                // changing currentFile to kpk for ex. we lost a piece so new file is regq
-                                // make sure to change back when done
                                 int noep = NOSQUARE;
                                 int otherSide = Opp(side);
-                                if (!SetupEGTB(whitePieceSquares, whitePieceTypes, blackPieceSquares, blackPieceTypes, ref otherSide, ref noep))
+
+                                if (!SetupEGTB(xs, xp, ys, yp, ref otherSide, ref noep, true))
                                 {
                                     okcall = false;
                                 }
                                 else
                                 {
-                                    list_sq_flipNS(whitePieceSquares);
-                                    list_sq_flipNS(blackPieceSquares);
                                     okcall = tb_probe_(Opp(side), NOSQUARE, ref newdtm);
                                 }
 
-                                whitePieceSquares = old_whitePieceSquares;
-                                whitePieceTypes = old_whitePieceType;
-                                blackPieceSquares = old_blackPieceSquares;
-                                blackPieceTypes = old_blackPieceType;
+                                whitePieceSquares = new List<int>(old_whitePieceSquares);
+                                blackPieceSquares = new List<int>(old_blackPieceSquares);
+                                whitePieceTypes = new List<int>(old_whitePieceType);
+                                blackPieceTypes = new List<int>(old_blackPieceType);
+
+                                if (Reversed)
+                                 UndoReversal(ref side, ref epsq);
 
                                 SetupEGTB(whitePieceSquares, whitePieceTypes, blackPieceSquares, blackPieceTypes, ref side, ref epsq);
 
@@ -2688,7 +2718,6 @@ namespace Gaviota
                                     /* chooses to ep or not */
                                     dtm = bestx(side, epscore, dtm);
                                 }
-
                             }
                         }
                     }
